@@ -32,12 +32,15 @@ import com.google.android.gms.location.GeofencingClient;
 import com.google.android.gms.location.GeofencingRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.gson.Gson;
 
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -53,6 +56,16 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private GPSTracker mGPSTracker;
     private GeofencingClient mGeofencingClient;
     private GoogleApiClient mGoogleApiClient;
+    public static final long GEOFENCE_EXPIRATION_IN_MILLISECONDS = 12 * 60 * 60 * 1000;
+    public static final float GEOFENCE_RADIUS_IN_METERS = 2000;
+
+
+    public  HashMap<String, LatLng> LANDMARKS = new HashMap<String, LatLng>();
+
+    static Intent makeNotificationIntent(Context geofenceService, String msg) {
+        Log.d("tag", msg);
+        return new Intent(geofenceService, MainActivity.class);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,7 +87,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         }
 
         mGeofenceList = new ArrayList<>();
-        populateGeofenceList();
+
         buildGoogleApiClient();
 
 
@@ -87,19 +100,30 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         });
 
 
-
-
         mbtnStop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                stopGeofence();
             }
         });
     }
-    static Intent makeNotificationIntent(Context geofenceService, String msg)
-    {
-        Log.d("tag",msg);
-        return new Intent(geofenceService,MainActivity.class);
+
+    public void stopGeofence(){
+        mGeofencingClient.removeGeofences(getGeofencePendingIntent())
+                .addOnSuccessListener(this, new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        // Geofences removed
+                        // ...
+                    }
+                })
+                .addOnFailureListener(this, new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        // Failed to remove geofences
+                        // ...
+                    }
+                });
     }
     @Override
     protected void onStart() {
@@ -118,15 +142,15 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
     public void populateGeofenceList() {
-        for (Map.Entry<String, LatLng> entry : Constants.LANDMARKS.entrySet()) {
+        for (Map.Entry<String, LatLng> entry : LANDMARKS.entrySet()) {
             mGeofenceList.add(new Geofence.Builder()
                     .setRequestId(entry.getKey())
                     .setCircularRegion(
                             entry.getValue().latitude,
                             entry.getValue().longitude,
-                            Constants.GEOFENCE_RADIUS_IN_METERS
+                            GEOFENCE_RADIUS_IN_METERS
                     )
-                    .setExpirationDuration(Constants.GEOFENCE_EXPIRATION_IN_MILLISECONDS)
+                    .setExpirationDuration(GEOFENCE_EXPIRATION_IN_MILLISECONDS)
                     .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER |
                             Geofence.GEOFENCE_TRANSITION_EXIT)
                     .build());
@@ -216,7 +240,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         if (status.isSuccess()) {
             Toast.makeText(
                     this,
-                    "Geofences Added",
+                    "Success, You will be notified once reached to destination !",
                     Toast.LENGTH_SHORT
             ).show();
         } else {
@@ -236,11 +260,13 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
             switch (results.status) {
                 case "OK":
-
+                    for (Place p : results.results) {
+                        LANDMARKS.put(p.name, new LatLng(p.geometry.location.lat, p.geometry.location.lng));
+                    }
+                    populateGeofenceList();
                     ArrayAdapter<Place> adapter = new ArrayAdapter<Place>(MainActivity.this, android.R.layout.simple_dropdown_item_1line, results.results);
                     mSpinnerPlaces.setAdapter(adapter);
-
-//                    Constants.populateLandMarks(results.results);
+                    System.out.print(LANDMARKS.size() + "\tsize");
                     break;
 
                 case "ZERO_RESULTS":

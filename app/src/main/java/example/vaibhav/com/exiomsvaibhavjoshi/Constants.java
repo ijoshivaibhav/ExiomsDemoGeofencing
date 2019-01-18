@@ -18,14 +18,14 @@ public class Constants {
 //            LANDMARKS.put(p.name, new LatLng(p.geometry.location.lat, p.geometry.location.lng));
 //        }
 //    }
-    static {
-        // San Francisco International Airport.
-            LANDMARKS.put("Moscone South", new LatLng(18.498406, 73.839033));
-
-        // Googleplex.
+//    static {
+//        // San Francisco International Airport.
+//            LANDMARKS.put("Moscone South", new LatLng(18.498406, 73.839033));
+//
+//        // Googleplex.
 //        LANDMARKS.put("Japantown", new LatLng(18.497388, 73.839560));
-
-        // Test
-//        LANDMARKS.put("SFO", new LatLng(37.621313,-122.378955));
-    }
+//
+//        // Test
+//       LANDMARKS.put("SFO", new LatLng(37.621313,-122.378955));
+//    }
 }
