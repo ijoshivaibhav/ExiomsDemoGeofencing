@@ -11,6 +11,7 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -46,21 +47,20 @@ import java.util.Locale;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener, ResultCallback<Status> {
+        GoogleApiClient.OnConnectionFailedListener, ResultCallback<Status>, AdapterView.OnItemSelectedListener {
 
+    public static final long GEOFENCE_EXPIRATION_IN_MILLISECONDS = 12 * 60 * 60 * 1000;
+    public static final float GEOFENCE_RADIUS_IN_METERS = 1000;
     public Results results;
-    ArrayList<Geofence> mGeofenceList;
+    public HashMap<String, LatLng> LANDMARKS = new HashMap<String, LatLng>();
+    ArrayList<Geofence> mGeofenceList, selectedGeofence;
+    int selectedItem = 0;
     private EditText medtCurrentLocation;
     private Spinner mSpinnerPlaces;
     private Button mbtnStart, mbtnStop, mbtnSearch;
     private GPSTracker mGPSTracker;
     private GeofencingClient mGeofencingClient;
     private GoogleApiClient mGoogleApiClient;
-    public static final long GEOFENCE_EXPIRATION_IN_MILLISECONDS = 12 * 60 * 60 * 1000;
-    public static final float GEOFENCE_RADIUS_IN_METERS = 2000;
-
-
-    public  HashMap<String, LatLng> LANDMARKS = new HashMap<String, LatLng>();
 
     static Intent makeNotificationIntent(Context geofenceService, String msg) {
         Log.d("tag", msg);
@@ -73,20 +73,25 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         setContentView(R.layout.activity_main);
         mGeofencingClient = LocationServices.getGeofencingClient(this);
         init();
-        RequestQueue requestQueue = Volley.newRequestQueue(MainActivity.this);
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET,
-                "https://maps.googleapis.com/maps/api/place/nearbysearch/json?type=" + "restaurent" + "&radius=1000&location=" + mGPSTracker.getLatitude() + "," + mGPSTracker.getLongitude() + "&&key=AIzaSyCbyFEyzpx5GQC37MBHMG6EPgMaMZcWwA0",
-                null, new MyResponseListener(), new MyErrorListener());
-        requestQueue.add(jsonObjectRequest);
+        try {
+            RequestQueue requestQueue = Volley.newRequestQueue(MainActivity.this);
+            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET,
+                    "https://maps.googleapis.com/maps/api/place/nearbysearch/json?type=" + "restaurent" + "&radius=1000&location=" + mGPSTracker.getLatitude() + "," + mGPSTracker.getLongitude() + "&&key=AIzaSyCbyFEyzpx5GQC37MBHMG6EPgMaMZcWwA0",
+                    null, new MyResponseListener(), new MyErrorListener());
+            requestQueue.add(jsonObjectRequest);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         if (mGPSTracker.canGetLocation) {
             String currentAddress = getCurrentAddress(mGPSTracker.getLatitude(), mGPSTracker.getLongitude());
-            medtCurrentLocation.setText(currentAddress);
+            medtCurrentLocation.setText(currentAddress + "");
         } else {
             Toast.makeText(this, "Enable GPS", Toast.LENGTH_LONG).show();
         }
 
         mGeofenceList = new ArrayList<>();
+        selectedGeofence = new ArrayList<>();
 
         buildGoogleApiClient();
 
@@ -108,7 +113,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         });
     }
 
-    public void stopGeofence(){
+
+    public void stopGeofence() {
         mGeofencingClient.removeGeofences(getGeofencePendingIntent())
                 .addOnSuccessListener(this, new OnSuccessListener<Void>() {
                     @Override
@@ -125,6 +131,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     }
                 });
     }
+
     @Override
     protected void onStart() {
         super.onStart();
@@ -166,6 +173,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         mbtnSearch = findViewById(R.id.btnsearch);
 
         mGPSTracker = new GPSTracker(this);
+        mSpinnerPlaces.setOnItemSelectedListener(this);
     }
 
     protected synchronized void buildGoogleApiClient() {
@@ -196,7 +204,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private GeofencingRequest getGeofencingRequest() {
         GeofencingRequest.Builder builder = new GeofencingRequest.Builder();
         builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER);
-        builder.addGeofences(mGeofenceList);
+        builder.addGeofences(selectedGeofence);
         return builder.build();
     }
 
@@ -216,8 +224,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         } catch (IOException e) {
             e.printStackTrace();
         }
-        String address = addresses.get(0).getAddressLine(0);
-        return address;
+        if (addresses.size() > 0) {
+            String address = addresses.get(0).getAddressLine(0);
+            return address;
+        }
+        return null;
     }
 
     @Override
@@ -245,8 +256,21 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             ).show();
         } else {
             // Get the status code for the error and log it using a user-friendly message.
-
         }
+    }
+
+    @Override
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+
+        selectedItem = parent.getSelectedItemPosition();
+        selectedGeofence.add(mGeofenceList.get(selectedItem));
+
+
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> parent) {
+
     }
 
 
@@ -264,7 +288,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                         LANDMARKS.put(p.name, new LatLng(p.geometry.location.lat, p.geometry.location.lng));
                     }
                     populateGeofenceList();
-                    ArrayAdapter<Place> adapter = new ArrayAdapter<Place>(MainActivity.this, android.R.layout.simple_dropdown_item_1line, results.results);
+                    ArrayAdapter<Place> adapter = new ArrayAdapter(MainActivity.this, android.R.layout.simple_dropdown_item_1line, mGeofenceList);
                     mSpinnerPlaces.setAdapter(adapter);
                     System.out.print(LANDMARKS.size() + "\tsize");
                     break;
@@ -301,4 +325,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             Toast.makeText(MainActivity.this, error.getLocalizedMessage(), Toast.LENGTH_LONG).show();
         }
     }
+
+
 }

@@ -176,6 +176,8 @@ public class GPSTracker extends Service implements LocationListener {
         Log.i("Tag", "" + distance);
         if (flag == 0) {
             if ((distance / 1000) < 1) {
+
+
                 Log.i("Distance", "dist. b/w < 1km");
                 Log.d("location", "" + distance);
                 NotificationManager notificationManager = (NotificationManager) mContext
@@ -187,7 +189,7 @@ public class GPSTracker extends Service implements LocationListener {
                 builder.setTicker("Current Location");
                 builder.setContentTitle("Near To Destination");
                 builder.setContentText("You are within 1 km from ur destination!!");
-                builder.setSmallIcon(R.drawable.ic_launcher_foreground);
+                builder.setSmallIcon(R.drawable.splash);
                 builder.setContentIntent(pendingIntent);
                 builder.setOngoing(true);
                 builder.setSubText("You are "
