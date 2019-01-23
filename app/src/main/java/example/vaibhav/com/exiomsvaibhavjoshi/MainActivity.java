@@ -49,8 +49,8 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, ResultCallback<Status>, AdapterView.OnItemSelectedListener {
 
-    public static final long GEOFENCE_EXPIRATION_IN_MILLISECONDS = 12 * 60 * 60 * 1000;
-    public static final float GEOFENCE_RADIUS_IN_METERS = 1000;
+    public static final long GEOFENCE_EXPIRATION_IN_MILLISECONDS = 12*60 * 60 * 1000;
+    public static final float GEOFENCE_RADIUS_IN_METERS = 1000.0f;
     public Results results;
     public HashMap<String, LatLng> LANDMARKS = new HashMap<String, LatLng>();
     ArrayList<Geofence> mGeofenceList, selectedGeofence;
@@ -61,6 +61,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private GPSTracker mGPSTracker;
     private GeofencingClient mGeofencingClient;
     private GoogleApiClient mGoogleApiClient;
+    ArrayList<String> list;
 
     static Intent makeNotificationIntent(Context geofenceService, String msg) {
         Log.d("tag", msg);
@@ -91,6 +92,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         }
 
         mGeofenceList = new ArrayList<>();
+        list=new ArrayList<>();
         selectedGeofence = new ArrayList<>();
 
         buildGoogleApiClient();
@@ -150,6 +152,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     public void populateGeofenceList() {
         for (Map.Entry<String, LatLng> entry : LANDMARKS.entrySet()) {
+            list.add(entry.getKey());
             mGeofenceList.add(new Geofence.Builder()
                     .setRequestId(entry.getKey())
                     .setCircularRegion(
@@ -288,7 +291,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                         LANDMARKS.put(p.name, new LatLng(p.geometry.location.lat, p.geometry.location.lng));
                     }
                     populateGeofenceList();
-                    ArrayAdapter<Place> adapter = new ArrayAdapter(MainActivity.this, android.R.layout.simple_dropdown_item_1line, mGeofenceList);
+                    ArrayAdapter<String> adapter = new ArrayAdapter(MainActivity.this, android.R.layout.simple_dropdown_item_1line, list);
                     mSpinnerPlaces.setAdapter(adapter);
                     System.out.print(LANDMARKS.size() + "\tsize");
                     break;
