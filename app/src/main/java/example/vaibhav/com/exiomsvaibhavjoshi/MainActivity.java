@@ -84,7 +84,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             e.printStackTrace();
         }
 
-        if (mGPSTracker.canGetLocation) {
+        if (new GPSTracker(this).canGetLocation) {
             String currentAddress = getCurrentAddress(mGPSTracker.getLatitude(), mGPSTracker.getLongitude());
             medtCurrentLocation.setText(currentAddress + "");
         } else {

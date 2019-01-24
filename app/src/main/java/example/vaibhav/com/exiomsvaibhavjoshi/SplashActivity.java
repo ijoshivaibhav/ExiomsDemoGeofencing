@@ -41,7 +41,7 @@ public class SplashActivity extends AppCompatActivity {
 
             if (checkPermissions()) {
                 btn_permssion.setVisibility(View.GONE);
-                if (gpsTracker.canGetLocation()) {
+                if (new GPSTracker(SplashActivity.this).canGetLocation()) {
                     new Handler().postDelayed(new Runnable() {
                         @Override
                         public void run() {
@@ -59,7 +59,7 @@ public class SplashActivity extends AppCompatActivity {
                 btn_permssion.setVisibility(View.VISIBLE);
             }
         } else {
-            if (gpsTracker.canGetLocation()) {
+            if (new GPSTracker(SplashActivity.this).canGetLocation()) {
                 new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -81,7 +81,7 @@ public class SplashActivity extends AppCompatActivity {
             public void onClick(View view) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     if (checkPermissions()) {
-                        if (gpsTracker.canGetLocation()) {
+                        if (new GPSTracker(SplashActivity.this).canGetLocation()) {
                             startActivity(new Intent(SplashActivity.this, MainActivity.class));
                             finish();
                         } else {
@@ -100,7 +100,7 @@ public class SplashActivity extends AppCompatActivity {
         btn_next.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (gpsTracker.canGetLocation()) {
+                if (new GPSTracker(SplashActivity.this).canGetLocation()) {
                     startActivity(new Intent(SplashActivity.this, MainActivity.class));
                     finish();
                 } else {
